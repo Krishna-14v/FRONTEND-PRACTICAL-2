@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practical 2: useState and useEffect Hooks</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    .section {
+      margin-top: 2rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .counter-display {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 20px 0;
+      color: #007bff;
+    }
+    .todos {
+      list-style: none;
+      padding: 0;
+    }
+    .todos li {
+      background: #f9f9f9;
+      padding: 10px;
+      margin: 5px 0;
+      border-left: 4px solid #007bff;
+      border-radius: 3px;
+    }
+    .todos button {
+      background: #dc3545;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      margin: 0;
+    }
+    input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      width: 300px;
+    }
+    .status {
+      color: #666;
+      font-style: italic;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [count, setCount] = useState(0);
+      const [todos, setTodos] = useState([]);
+      const [input, setInput] = useState('');
+      const [users, setUsers] = useState([]);
+      const [loading, setLoading] = useState(false);
+
+      // useEffect 1: Run once on mount - fetch users data
+      useEffect(() => {
+        console.log('Component mounted - fetching users');
+        fetchUsers();
+      }, []);
+
+      // useEffect 2: Run when count changes
+      useEffect(() => {
+        console.log('Count changed to:', count);
+        document.title = `Counter: ${count}`;
+      }, [count]);
+
+      // useEffect 3: Run when todos change
+      useEffect(() => {
+        console.log('Todos updated:', todos);
+        localStorage.setItem('todos', JSON.stringify(todos));
+      }, [todos]);
+
+      async function fetchUsers() {
+        setLoading(true);
+        try {
+          const response = await fetch('https://jsonplaceholder.typicode.com/users?_limit=3');
+          const data = await response.json();
+          setUsers(data);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        }
+        setLoading(false);
+      }
+
+      function addTodo() {
+        if (input.trim()) {
+          setTodos([...todos, { id: Date.now(), text: input }]);
+          setInput('');
+        }
+      }
+
+      function removeTodo(id) {
+        setTodos(todos.filter(todo => todo.id !== id));
+      }
+
+      return (
+        <div className="container">
+          <h1>Practical 2: useState and useEffect Hooks</h1>
+
+          {/* Counter Section */}
+          <div className="section">
+            <h2>1. useState Example - Counter</h2>
+            <p>useState manages state. Here we manage a counter.</p>
+            <div className="counter-display">{count}</div>
+            <button onClick={() => setCount(count + 1)}>Increment</button>
+            <button onClick={() => setCount(count - 1)}>Decrement</button>
+            <button onClick={() => setCount(0)}>Reset</button>
+            <p className="status">Current count: {count}</p>
+          </div>
+
+          {/* Todo Section */}
+          <div className="section">
+            <h2>2. useState Example - Todo List</h2>
+            <p>Managing an array of todos with useState.</p>
+            <div>
+              <input 
+                type="text" 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+                placeholder="Add a new todo..."
+              />
+              <button onClick={addTodo}>Add</button>
+            </div>
+            <ul className="todos">
+              {todos.map(todo => (
+                <li key={todo.id}>
+                  {todo.text}
+                  <button onClick={() => removeTodo(todo.id)}>Delete</button>
+                </li>
+              ))}
+            </ul>
+            <p className="status">Total todos: {todos.length}</p>
+          </div>
+
+          {/* useEffect Section */}
+          <div className="section">
+            <h2>3. useEffect Example - Fetch Users</h2>
+            <p>useEffect runs side effects like fetching data on component mount.</p>
+            <button onClick={fetchUsers} disabled={loading}>
+              {loading ? 'Loading...' : 'Refresh Users'}
+            </button>
+            <ul>
+              {users.map(user => (
+                <li key={user.id}>{user.name} ({user.email})</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="section">
+            <h2>How it works:</h2>
+            <ul>
+              <li><strong>useState:</strong> Returns [state, setState] to manage component state</li>
+              <li><strong>useEffect:</strong> Runs side effects after render. Dependency array controls when it runs</li>
+              <li><strong>[]:</strong> Empty array = run once on mount</li>
+              <li><strong>[count]:</strong> Run when count changes</li>
+              <li><strong>No array:</strong> Run after every render</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
